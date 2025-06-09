@@ -34,7 +34,10 @@ existing = [info["name"] for info in pc.list_indexes()]
 if INDEX_NAME not in existing:
     pc.create_index(
         name=INDEX_NAME,
-        dimension=1536,  # compatible con text-embedding-3-large
+        # text-embedding-3-large devuelve vectores de 3072 dimensiones
+        # para que Pinecone acepte los embeddings, el índice debe tener esa
+        # misma dimensión
+        dimension=3072,
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region=PINECONE_REGION)
     )
