@@ -45,7 +45,9 @@ while not pc.describe_index(INDEX_NAME).status["ready"]:
 # 3️⃣ Configura el modelo de embeddings
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large",
-    openai_api_key=os.environ["OPENAI_API_KEY"]
+    openai_api_key=os.environ["OPENAI_API_KEY"],
+    # Limita los lotes a 100 textos para no exceder el máximo de tokens
+    chunk_size=100,
 )
 
 # 4️⃣ Procesa tus PDFs
@@ -77,7 +79,9 @@ print("🚀 Subiendo datos a Pinecone...")
 vectorstore = PineconeVectorStore.from_documents(
     all_docs,
     embedding=embeddings,
-    index_name=INDEX_NAME
+    index_name=INDEX_NAME,
+    # Usa lotes más pequeños para evitar solicitudes con demasiados tokens
+    embeddings_chunk_size=100,
 )
 print("✅ ¡Carga finalizada! Índice listo para usar.")
 
