@@ -34,7 +34,10 @@ existing = [info["name"] for info in pc.list_indexes()]
 if INDEX_NAME not in existing:
     pc.create_index(
         name=INDEX_NAME,
-        dimension=1536,  # compatible con text-embedding-3-large
+        # text-embedding-3-large devuelve vectores de 3072 dimensiones
+        # para que Pinecone acepte los embeddings, el índice debe tener esa
+        # misma dimensión
+        dimension=3072,
         metric="cosine",
         spec=ServerlessSpec(cloud="aws", region=PINECONE_REGION)
     )
@@ -45,7 +48,9 @@ while not pc.describe_index(INDEX_NAME).status["ready"]:
 # 3️⃣ Configura el modelo de embeddings
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large",
-    openai_api_key=os.environ["OPENAI_API_KEY"]
+    openai_api_key=os.environ["OPENAI_API_KEY"],
+    # Limita los lotes a 100 textos para no exceder el máximo de tokens
+    chunk_size=100,
 )
 
 # 4️⃣ Procesa tus PDFs
@@ -77,10 +82,13 @@ print("🚀 Subiendo datos a Pinecone...")
 vectorstore = PineconeVectorStore.from_documents(
     all_docs,
     embedding=embeddings,
-    index_name=INDEX_NAME
+    index_name=INDEX_NAME,
+    # Usa lotes más pequeños para evitar solicitudes con demasiados tokens
+    embeddings_chunk_size=100,
 )
 print("✅ ¡Carga finalizada! Índice listo para usar.")
 
 # 6️⃣ Limpieza final
-pc.close()  # Cierra la conexión al cliente Pinecone
-print("🔒 Conexión a Pinecone cerrada.")
+# Pinecone SDK v4 no expone un método `close` en el cliente síncrono,
+# así que no hay que cerrar explícitamente la conexión.
+print("🔒 Proceso terminado.")
