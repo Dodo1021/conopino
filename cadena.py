@@ -82,5 +82,6 @@ vectorstore = PineconeVectorStore.from_documents(
 print("✅ ¡Carga finalizada! Índice listo para usar.")
 
 # 6️⃣ Limpieza final
-pc.close()  # Cierra la conexión al cliente Pinecone
-print("🔒 Conexión a Pinecone cerrada.")
+# Pinecone SDK v4 no expone un método `close` en el cliente síncrono,
+# así que no hay que cerrar explícitamente la conexión.
+print("🔒 Proceso terminado.")
