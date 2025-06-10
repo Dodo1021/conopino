@@ -5,6 +5,7 @@ from pinecone import Pinecone, ServerlessSpec
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 import pandas as pd
 
 # 🔐 Configuración de credenciales
@@ -64,11 +65,16 @@ for fname in os.listdir(excel_folder):
             sheets = pd.read_excel(path, sheet_name=None)
             for sheet_name, df in sheets.items():
                 text = df.to_csv(index=False)
-                doc = Document(
-                    page_content=text,
-                    metadata={"source": fname, "sheet": sheet_name},
+                splitter = RecursiveCharacterTextSplitter(
+                    chunk_size=2000, chunk_overlap=200
                 )
-                all_docs.append(doc)
+                chunks = splitter.split_text(text)
+                for chunk in chunks:
+                    doc = Document(
+                        page_content=chunk,
+                        metadata={"source": fname, "sheet": sheet_name},
+                    )
+                    all_docs.append(doc)
         except Exception as e:
             print(f"❌ Error en {fname}: {e}")
 print(f"📄 Chunks generados: {len(all_docs)}")
