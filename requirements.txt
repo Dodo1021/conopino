@@ -2,5 +2,6 @@ pinecone>=2.2.2
 langchain-community>=0.1.2
 langchain-openai>=0.2.0
 langchain-pinecone>=0.0.4
-pypdf>=5.6.0
+pandas>=2.2.0
+openpyxl>=3.1.0
 openai>=1.8.0
