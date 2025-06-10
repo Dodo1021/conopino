@@ -2,9 +2,10 @@ import os
 import time
 import unicodedata
 from pinecone import Pinecone, ServerlessSpec
-from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
+from langchain.docstore.document import Document
+import pandas as pd
 
 # 🔐 Configuración de credenciales
 # Asegúrate de usar solo guiones ASCII '-' en tu clave
@@ -24,7 +25,7 @@ else:
 
 INDEX_NAME     = "catalogo"
 PINECONE_REGION = "us-east-1"
-pdf_folder     = r"C:\Users\David Sanchez\OneDrive\Documentos\Catalogos\Sandvik"
+excel_folder   = r"C:\Users\David Sanchez\OneDrive\Documentos\Catalogos\Sandvik"
 
 # 1️⃣ Inicializa el cliente Pinecone (SDK v4)
 pc = Pinecone(api_key=os.environ["PINECONE_API_KEY"])
@@ -53,16 +54,21 @@ embeddings = OpenAIEmbeddings(
     chunk_size=100,
 )
 
-# 4️⃣ Procesa tus PDFs
+# 4️⃣ Procesa tus archivos de Excel
 all_docs = []
-for fname in os.listdir(pdf_folder):
-    if fname.lower().endswith(".pdf"):
-        path = os.path.join(pdf_folder, fname)
+for fname in os.listdir(excel_folder):
+    if fname.lower().endswith((".xls", ".xlsx")):
+        path = os.path.join(excel_folder, fname)
         try:
             print(f"Procesando: {fname}...")
-            loader = PyPDFLoader(path)
-            docs = loader.load_and_split()
-            all_docs.extend(docs)
+            sheets = pd.read_excel(path, sheet_name=None)
+            for sheet_name, df in sheets.items():
+                text = df.to_csv(index=False)
+                doc = Document(
+                    page_content=text,
+                    metadata={"source": fname, "sheet": sheet_name},
+                )
+                all_docs.append(doc)
         except Exception as e:
             print(f"❌ Error en {fname}: {e}")
 print(f"📄 Chunks generados: {len(all_docs)}")
